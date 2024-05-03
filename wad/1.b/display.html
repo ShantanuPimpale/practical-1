@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Form Data</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Form Data</h2>
+        <div id="formData"></div>
+    </div>
+
+    <script>
+        // Retrieve form data from localStorage
+        var storedData = localStorage.getItem("formData");
+
+        if (storedData) {
+            // Parse the JSON string to convert it back to an object
+            var formData = JSON.parse(storedData);
+
+            // Create HTML elements to display the form data
+            var formDataContainer = document.getElementById("formData");
+            formDataContainer.innerHTML = "<p><strong>Name:</strong> " + formData.name + "</p>" +
+                                           "<p><strong>Email:</strong> " + formData.email + "</p>" +
+                                           "<p><strong>Message:</strong> " + formData.message + "</p>";
+        } else {
+            // If no data is found in localStorage, display a message
+            var formDataContainer = document.getElementById("formData");
+            formDataContainer.innerHTML = "<p>No form data found.</p>";
+        }
+    </script>
+</body>
+</html>
