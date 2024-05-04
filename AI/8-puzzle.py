@@ -1,47 +1,116 @@
-import numpy as np
-from node import Node
-from node import Puzzle
-from node import Distance
+from queue import PriorityQueue
+import copy
 
+class State:
+    def __init__(self, puzzle, level=0, h=0):
+        self.puzzle = puzzle
+        self.level = level
+        self.h = h
+        self.cost = h + level
 
-heuristic = input("Choose a Heuristic: \n 1. Misplaced Tiles \n 2. Manhattan Distance \n")
-heuristic=int(heuristic)
-
-initial_board=[]
-final_board=[]
-
-print("Enter the 8 puzzle problem: \n")
-
-for i in range(9):
-    x = int(input())
-    initial_board.append(x) 
+    def __lt__(self, other):
+        # This defines how the heapq compares states: by cost, then by level
+        if self.cost == other.cost:
+            return self.level < other.level
+        return self.cost < other.cost
     
-print("Enter the 8 puzzle goal: \n")
+gl = [[1,2,3],
+        [8,0,4],
+        [7,6,5]]
 
-for i in range(9):
-    x = int(input())
-    final_board.append(x) 
+ini = [[2,8,3],
+            [1,6,4],
+            [7,0,5]]
 
-initial_board   =   Node(initial_board)
-final_board     =   Node(final_board)
-explored_nodes  =   []
-fringe          =   [initial_board]
-distance        =   Distance.distance(initial_board.get_current_state(),final_board.get_current_state(),heuristic)
-fringe[0].update_hn(distance)
-count=1
+def fScore(curr , goal):
+    count = 0
+    for i in range(len(curr)):
+        for j in range(len(curr[i])):
+            if curr[i][j] != goal[i][j]:
+                count = count + 1
+    return count
 
-print("---------------Printing Solution Path---------------\n \n")
+def calScore(temp:State ,goal):
+    c = fScore(temp.puzzle , goal)
+    temp.level = temp.level +1
+    if c ==0:
+        temp.cost = 0
+    else :
+        temp.cost = temp.level + c
+        
+    return temp
 
-while not not fringe:
-    minimum_fn_index    =   Puzzle.least_fn(fringe)
-    current_node        =   fringe.pop(minimum_fn_index)
-    g                   =   current_node.get_gn()+1
-    goal_node           =   np.asarray(final_board.get_current_state())
-    if np.array_equal(np.asarray(current_node.get_current_state()), goal_node ):
-        distance    =   Distance.distance(np.asarray(current_node.get_current_state()),goal_node,heuristic)
-        explored_nodes.append(current_node)
-        Puzzle.goal_reached(explored_nodes,count)
-        fringe      =   []
-    elif not np.array_equal(current_node, goal_node ):
-        zero    =   np.where(np.asarray(current_node.get_current_state()) == 0)[0][0]
-        count   =   Node.expand_node(fringe, explored_nodes, current_node,goal_node, zero, g, count,heuristic)
+def getZero(temp):
+    for i in range(len(temp)):
+        for j in range(len(temp[i])):
+            if temp[i][j] == 0:
+                return i,j
+    return 0,0
+
+
+def display(temp):
+    for i in range(len(temp.puzzle)):
+        for j in range(len(temp.puzzle)):
+            print(temp.puzzle[i][j],end=" ")
+        print()
+    print()
+    print(f" h : {temp.h}")
+    print(f" level : {temp.level}")
+    print(f" cost : {temp.cost} \n")
+
+def solve(ini , gl):
+    h = fScore(ini , gl)
+    starter = State(ini , 0 ,h  )
+    pq = PriorityQueue()
+    # heap.heappush(pq, starter)
+    pq.put(starter)
+    
+    vis = []
+    while pq:
+        curr = pq.get()
+        display(curr)
+        if curr.cost ==0:
+            print("--"*10)
+            print("final solution state :\n")
+            display(curr)
+            return
+        x , y = getZero(curr.puzzle)
+        
+        if x > 0:
+            temp = copy.deepcopy(curr)
+            temp.puzzle[x][y] , temp.puzzle[x-1][y] = temp.puzzle[x-1][y] , temp.puzzle[x][y]
+            temp = calScore(temp , gl)
+            if temp.puzzle not in vis:
+                vis.append(temp.puzzle)
+                pq.put(temp)
+                
+        if x < 2 :
+            temp = copy.deepcopy(curr)
+            temp.puzzle[x][y] , temp.puzzle[x+1][y] = temp.puzzle[x+1][y] , temp.puzzle[x][y]
+            temp = calScore(temp , gl)
+            if temp.puzzle not in vis:
+                vis.append(temp.puzzle)
+                pq.put(temp)
+                
+        if y > 0:
+            temp = copy.deepcopy(curr)
+            temp.puzzle[x][y] , temp.puzzle[x][y-1] = temp.puzzle[x][y-1] , temp.puzzle[x][y]
+            temp = calScore(temp , gl)
+            if temp.puzzle not in vis:
+                vis.append(temp.puzzle)
+                pq.put(temp)
+                
+        if y < 2:
+            temp = copy.deepcopy(curr)
+            temp.puzzle[x][y] , temp.puzzle[x][y+1] = temp.puzzle[x][y+1] , temp.puzzle[x][y]
+            temp = calScore(temp , gl)
+            if temp.puzzle not in vis:
+                vis.append(temp.puzzle)
+                pq.put(temp)
+                
+    print("success")
+    
+initial_puzzle = [[1,2, 3], [8, 6, 4], [7, 0, 5]]
+goal_state = [[1, 2, 3], [8, 0, 4], [7, 6, 5]]
+
+solve(ini , gl)
